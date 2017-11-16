@@ -30,3 +30,11 @@ d4est_util_dbl_pow_int(double a, int b){
         return result;
     }
 }
+
+
+
+void
+d4est_util_copy_1st_to_2nd (double *v1, double *v2, int N)
+{
+  memcpy (v2, v1, N * sizeof (double));
+}

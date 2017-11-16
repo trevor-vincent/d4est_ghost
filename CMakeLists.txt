@@ -42,6 +42,9 @@ SET (
   Mesh/d4est_mesh.c
   Mesh/d4est_element_data.c
   Ghosts/d4est_ghost.c
+  Ghosts/d4est_ghost_data.c
+  Base/d4est_base.c
+  
   # Mesh/d4est
   )
 

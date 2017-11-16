@@ -3,7 +3,21 @@
 #include <d4est_base.h>
 #include <d4est_mesh.h>
 #include <d4est_mesh_data.h>
+#include <d4est_ghost_data.h>
 #include <d4est_ghost.h>
+
+
+static int
+test_refine
+(
+ p4est_t * p4est,
+ p4est_topidx_t which_tree,
+ p4est_quadrant_t * quadrant
+)
+{
+  return 1;
+}
+
 
 int
 get_deg(d4est_element_data_t* ed, void* user){
@@ -67,15 +81,18 @@ int main(int argc, char *argv[])
      1
     );
 
-  /* p4est_refine_ext */
-  /*   ( */
-  /*    p4est, */
-  /*    0, */
-  /*    -1, */
-  /*    test_refine, */
-  /*    NULL, */
-  /*    NULL */
-  /*   ); */
+  int num_refines = 2;
+  for (int i = 0; i < num_refines; i++) {
+    p4est_refine_ext
+      (
+       p4est,
+       0,
+       -1,
+       test_refine,
+       NULL,
+       NULL
+      );  
+ }
   
   d4est_mesh_data_sizes_t sizes = d4est_mesh_update_element_data
                                   (
@@ -89,11 +106,76 @@ int main(int argc, char *argv[])
                                                 &sizes);
 
 
-  d4est_ghost_data_t* dgd = d4est_ghost_init(p4est);
-  
+  d4est_ghost_t* d4est_ghost = d4est_ghost_init(p4est);
 
+
+
+  d4est_mesh_data_add_field(dmd, "u", VOLUME_NODAL);
+  
+  for (p4est_topidx_t tt = p4est->first_local_tree;
+       tt <= p4est->last_local_tree;
+       ++tt)
+    {
+      p4est_tree_t* tree = p4est_tree_array_index (p4est->trees, tt);
+      sc_array_t* tquadrants = &tree->quadrants;
+      int Q = (p4est_locidx_t) tquadrants->elem_count;
+      
+      for (int q = 0; q < Q; ++q) {
+        p4est_quadrant_t* quad = p4est_quadrant_array_index (tquadrants, q);
+        d4est_element_data_t* ed = (d4est_element_data_t*)(quad->p.user_data);
+
+        int elem_size = d4est_element_data_get_size_of_field
+                        (
+                         ed,
+                         VOLUME_NODAL
+                        );
+        
+        double* u = d4est_mesh_get_field_on_element
+                    (
+                     ed,
+                     "u",
+                     VOLUME_NODAL,
+                     dmd,
+                     NULL
+                    );
+        for (int i = 0; i < elem_size; i++){
+          ed->test_data[i] = i*ed->id + 1;
+          u[i] = i*ed->id + 1;
+          /* printf("ed->id, i, %d, %d\n", ed->id, i); */
+          /* printf("u[i] = %f\n", u[i]); */
+          /* printf("test_data[i] = %f\n", ed->test_data[i]); */
+        }
+        
+      }
+    }  
+
+  const char* transfer_names [] = {"u", NULL};
+  
+  d4est_ghost_data_t* d4est_ghost_data
+    = d4est_ghost_data_init(
+                            p4est,
+                            d4est_ghost,
+                            &transfer_names[0],
+                            dmd
+                           );
+
+  double* u = d4est_mesh_data_get_field
+              (
+               dmd,
+               "u"
+              );  
+
+  for (int i = 0; i < dmd->field_sizes.local_nodes; i++){
+    printf(" u = %f on proc %d\n", u[i], p4est->mpirank); 
+  }
+  
+  /* d4est_mpi_gdb_stall(); */
+  d4est_ghost_data_exchange(p4est, d4est_ghost, d4est_ghost_data, dmd);
+
+  
+  d4est_ghost_data_destroy(d4est_ghost_data);
   d4est_mesh_data_destroy(dmd);
-  d4est_ghost_destroy(dgd);
+  d4est_ghost_destroy(d4est_ghost);
 
   p4est_destroy(p4est);
   p4est_connectivity_destroy(conn);

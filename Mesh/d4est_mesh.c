@@ -13,7 +13,7 @@ d4est_mesh_update_element_data
 {
   d4est_mesh_data_sizes_t sizes;
   sizes.local_nodes = 0;
-
+  int id_stride = 0;
 
   for (p4est_topidx_t tt = p4est->first_local_tree;
        tt <= p4est->last_local_tree;
@@ -31,7 +31,9 @@ d4est_mesh_update_element_data
         }
         ed->strides.stride_volume_nodal = sizes.local_nodes;
         ed->mpi_rank = p4est->mpirank;
+        ed->id = id_stride;
         sizes.local_nodes += d4est_element_data_get_size_of_field(ed, VOLUME_NODAL);
+        id_stride++;
       }
     }
   
@@ -45,20 +47,15 @@ double* d4est_mesh_get_field_on_element
  const char* name,
  d4est_field_type_t type,
  d4est_mesh_data_t* lgd,
- d4est_mesh_data_t* ggd
+ d4est_ghost_data_t* dgd
 ){
-  if (ed->mpi_rank == lgd->mpi_rank){
+
+  if(ed->mpi_rank == lgd->mpi_rank){
     D4EST_ASSERT(lgd != NULL);
     double* field = d4est_mesh_data_get_field(lgd, name);
     D4EST_ASSERT(field != NULL);
-    int stride = d4est_element_data_get_stride(ed, type);
+    int stride = d4est_element_data_get_stride_for_field(ed, type);
     return &field[stride];
   }
-  else {
-    D4EST_ASSERT(ggd != NULL);
-    double* field = d4est_mesh_data_get_field(ggd, name);
-    D4EST_ASSERT(field != NULL);
-    int stride = d4est_element_data_get_stride(ed, type);
-    return &field[stride];
-  }
+  else{}
 }

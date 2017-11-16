@@ -1,3 +1,4 @@
+#include <d4est_base.h>
 #include <d4est_mesh_data.h>
 #include <d4est_field.h>
 
@@ -14,7 +15,6 @@ int d4est_mesh_data_get_size_of_field
   default: D4EST_ABORT("Not a supported field type");
   }
 }
-
 
 static
 int d4est_mesh_data_free_fields_callback(const char *key, void *val, void *arg)
@@ -161,15 +161,15 @@ d4est_mesh_data_get_vector_field
 {
   char* vx = NULL;
   char* vy = NULL;
-  D4EST_ASPRINTF(vx, "%sx", prefix);
-  D4EST_ASPRINTF(vy, "%sy", prefix);
+  d4est_asprintf(&vx, "%sx", prefix);
+  d4est_asprintf(&vy, "%sy", prefix);
   vfield[0] = d4est_mesh_data_get_field(s, vx);
   vfield[1] = d4est_mesh_data_get_field(s, vy);
   free(vx);
   free(vy);
   if ((D4EST_DIM) == 3){
     char* vz = NULL;
-    D4EST_ASPRINTF(vz, "%sz", prefix);
+    d4est_asprintf(&vz, "%sz", prefix);
     vfield[2] = d4est_mesh_data_get_field(s, vz);
     free(vz);
   }
