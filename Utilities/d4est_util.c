@@ -59,3 +59,13 @@ d4est_util_compare_vecs(double* a, double*b, int N, double eps){
   }
   return 1;
 }
+
+
+int d4est_util_compare_strings
+(
+ const char* str1,
+ const char* str2
+)
+{
+  return (strcmp(str1, str2) == 0);
+}

@@ -42,7 +42,7 @@ d4est_ghost_data_init
   int num_names = 0;
   
   for (int tn = 0; transfer_names[tn] != NULL; tn++){
-    printf("%s\n", transfer_names[tn]);
+    /* printf("%s\n", transfer_names[tn]); */
     num_names++;
   }
 
@@ -189,7 +189,7 @@ d4est_ghost_data_exchange
                              d4est_ghost_data->transfer_types[tn]
                             );
 
-          printf("total_memsize = %d on proc %d\n", total_memsize, p4est->mpirank);
+          /* printf("total_memsize = %d on proc %d\n", total_memsize, p4est->mpirank); */
         }
       }
       /* every peer populates its own send buffer */
@@ -214,7 +214,7 @@ d4est_ghost_data_exchange
           memcpy (mem, &field[stride], mem_size);
           mem += mem_size;
 
-          printf("mem_size = %d on proc %d\n", mem_size, p4est->mpirank);
+          /* printf("mem_size = %d on proc %d\n", mem_size, p4est->mpirank); */
         }
       }
       r = (sc_MPI_Request *) sc_array_push (&requests);

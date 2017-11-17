@@ -2,20 +2,6 @@
 #include <d4est_mesh_data.h>
 #include <d4est_field.h>
 
-static inline
-int d4est_mesh_data_get_size_of_field
-(
- d4est_mesh_data_sizes_t* sizes,
- d4est_field_type_t type
-)
-{
-  /* in the future there will be multiple types */
-  switch(type){
-  case VOLUME_NODAL: return sizes->local_nodes;
-  default: D4EST_ABORT("Not a supported field type");
-  }
-}
-
 static
 int d4est_mesh_data_free_fields_callback(const char *key, void *val, void *arg)
 {
@@ -30,8 +16,9 @@ static
 int d4est_mesh_data_realloc_fields_callback(const char *key, void *val, void *arg)
 {
   d4est_field_t* field = val;
-  d4est_mesh_data_sizes_t* sizes = arg;
-  int size = d4est_mesh_data_get_size_of_field(sizes, field->field_type);
+  int* sizes = arg;
+  D4EST_FIELD_CHECK_TYPE(field->field_type);
+  int size = sizes[field->field_type];
   field->field_data = D4EST_REALLOC(field->field_data, double, size);
   return 1;
 }
@@ -73,8 +60,9 @@ d4est_mesh_data_init_field
   D4EST_ASSERT(typey == typez);
 #endif
   D4EST_ASSERT(typef == typex && typex == typey);
-  
-  int size = d4est_mesh_data_get_size_of_field(&s->field_sizes, typef);
+
+  D4EST_FIELD_CHECK_TYPE(typef);
+  int size = s->field_sizes[typef];
   for (int i = 0; i < size; i++){
     field[i] = init_fcn
                (
@@ -96,7 +84,7 @@ d4est_mesh_data_add_field
  d4est_field_type_t field_type
 )
 {
-  int size = d4est_mesh_data_get_size_of_field(&s->field_sizes, field_type);
+  int size = s->field_sizes[field_type];
   if(d4est_dictionary_get_value_ptr(&s->fields,name))
     return 1;
 
@@ -195,30 +183,32 @@ d4est_mesh_data_get_field_type
   }        
 }
 
-void
-d4est_mesh_data_update
-(
- d4est_mesh_data_t* s,
- d4est_mesh_data_sizes_t* loc_sizes
-)
-{
-  s->field_sizes.local_nodes = loc_sizes->local_nodes;
-  d4est_dictionary_allprefixed_ptr(&s->fields, "",
-                                   &d4est_mesh_data_realloc_fields_callback, &s->field_sizes);
-}
+/* void */
+/* d4est_mesh_data_update */
+/* ( */
+/*  d4est_mesh_data_t* s, */
+/*  d4est_mesh_data_sizes_t* loc_sizes */
+/* ) */
+/* { */
+/*   s->field_sizes.local_nodes = loc_sizes->local_nodes; */
+/*   d4est_dictionary_allprefixed_ptr(&s->fields, "", */
+/*                                    &d4est_mesh_data_realloc_fields_callback, &s->field_sizes); */
+/* } */
 
 d4est_mesh_data_t*
 d4est_mesh_data_init
 (
  int mpi_rank,
- d4est_mesh_data_sizes_t* loc_sizes
+ int* loc_sizes
 )
 {
   d4est_mesh_data_t* s = D4EST_ALLOC(d4est_mesh_data_t, 1);
-
   s->mpi_rank = mpi_rank;
-  s->field_sizes.local_nodes = loc_sizes->local_nodes;
 
+  for (int i = 0; i < D4EST_FIELD_TYPES; i++){
+    s->field_sizes[i] = loc_sizes[i];
+  }
+  
   d4est_dictionary_init(&s->fields);
   
   return s;
@@ -235,9 +225,10 @@ d4est_mesh_data_destroy
                                    &d4est_mesh_data_free_fields_callback, NULL);
 
   d4est_dictionary_clear(&s->fields);
-
   s->mpi_rank = -1;
-  s->field_sizes.local_nodes = -1;
+  for (int i = 0; i < D4EST_FIELD_TYPES; i++){
+    s->field_sizes[i] = -1;
+  }
 
   D4EST_FREE(s);
 }

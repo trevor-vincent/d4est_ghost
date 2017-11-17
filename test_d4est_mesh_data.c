@@ -16,12 +16,12 @@ sqr_fcn(
 
 int main(int argc, char *argv[])
 {
-
-  d4est_mesh_data_sizes_t local_sizes;
   
-  int local_nodes = local_sizes.local_nodes = 8*8*(3*3*3);
+  int local_nodes = 8*8*(3*3*3);
+  int local_sizes [D4EST_FIELD_TYPES];
+  local_sizes[0] = local_nodes;
   
-  d4est_mesh_data_t* lgd = d4est_mesh_data_init(0,&local_sizes);
+  d4est_mesh_data_t* lgd = d4est_mesh_data_init(0,local_sizes);
 
   d4est_mesh_data_add_field(lgd, "_foo_1", VOLUME_NODAL);
 
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
   }
 
 
-  local_nodes = local_sizes.local_nodes = 8*8*(3*3*3)*8;  
-  d4est_mesh_data_update(lgd, &local_sizes);
+  /* local_sizes[0] = 8*8*(3*3*3)*8;   */
+  /* d4est_mesh_data_update(lgd, local_sizes); */
 
 
     x = d4est_mesh_data_get_field(lgd, "_geom_x");

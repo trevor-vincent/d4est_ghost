@@ -64,6 +64,7 @@
     {                                           \
     } while (0)
 
+#define D4EST_FACES P4EST_FACES
 #define D4EST_ASSERT(c) SC_CHECK_ABORT ((c), "Assertion '" #c "'")
 #define D4EST_ABORT(c) SC_ABORT(c)
 #define D4EST_ALLOC(a,b) P4EST_ALLOC(a,b)

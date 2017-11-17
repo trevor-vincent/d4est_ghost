@@ -94,17 +94,22 @@ int main(int argc, char *argv[])
        NULL
       );  
  }
+
+
+  printf("%d elements on proc %d\n", p4est->local_num_quadrants, p4est->mpirank);
   
-  d4est_mesh_data_sizes_t sizes = d4est_mesh_update_element_data
-                                  (
-                                   p4est,
-                                   get_deg,
-                                   NULL
-                                  );
+  int sizes [D4EST_FIELD_TYPES];
+  d4est_mesh_update_element_data
+    (
+     p4est,
+     get_deg,
+     sizes,
+     NULL
+    );
   
 
   d4est_mesh_data_t* dmd = d4est_mesh_data_init(p4est->mpirank,
-                                                &sizes);
+                                                sizes);
 
 
 
@@ -112,6 +117,7 @@ int main(int argc, char *argv[])
 
 
   d4est_mesh_data_add_field(dmd, "u", VOLUME_NODAL);
+  d4est_mesh_data_add_field(dmd, "u_face", FACE_POINT);
   
   for (p4est_topidx_t tt = p4est->first_local_tree;
        tt <= p4est->last_local_tree;
@@ -136,8 +142,26 @@ int main(int argc, char *argv[])
                      ed,
                      "u",
                      VOLUME_NODAL,
+                     NULL,
                      dmd
                     );
+
+
+        double* u_face = d4est_mesh_get_field_on_element
+                    (
+                     ed,
+                     "u_face",
+                     FACE_POINT,
+                     NULL,
+                     dmd
+                    );
+        
+
+        for (int i = 0; i < D4EST_FACES; i++){
+          u_face[i] = i*ed->id + 2.3;
+          ed->test_data_face[i] = i*ed->id + 2.3;
+        }
+        
         for (int i = 0; i < elem_size; i++){
           ed->test_data[i] = i*ed->id + 1;
           u[i] = i*ed->id + 1;
@@ -151,7 +175,7 @@ int main(int argc, char *argv[])
 
   d4est_ghost_t* d4est_ghost = d4est_ghost_init(p4est);
 
-  const char* transfer_names [] = {"u", NULL};
+  const char* transfer_names [] = {"u", "u_face", NULL};
   
   d4est_ghost_data_t* d4est_ghost_data
     = d4est_ghost_data_init(
@@ -178,8 +202,12 @@ int main(int argc, char *argv[])
   for (int gid = 0; gid < d4est_ghost->ghost->ghosts.elem_count; gid++){
     d4est_element_data_t* ged = &d4est_ghost->ghost_elements[gid];
 
-    double* ud = d4est_mesh_get_field_on_ghost(ged,0,NULL,d4est_ghost_data);
+    double* ud = d4est_mesh_get_field_on_ghost(ged,0,"u",d4est_ghost_data);
     double* up = &ged->test_data[0];
+
+
+    double* ud_face = d4est_mesh_get_field_on_ghost(ged,1,"u_face",d4est_ghost_data);
+    double* up_face = &ged->test_data_face[0];
     
     d4est_field_type_t type = d4est_ghost_data->transfer_types[0];
     int size = d4est_element_data_get_size_of_field(ged,type);
@@ -188,6 +216,13 @@ int main(int argc, char *argv[])
     if (!compare){
       DEBUG_PRINT_2ARR_DBL(ud, up, size);
     }
+
+    int compare1 = d4est_util_compare_vecs(ud_face, up_face, (D4EST_FACES), 1e-15);
+    if (!compare1){
+      DEBUG_PRINT_2ARR_DBL(ud_face, up_face, (D4EST_FACES));
+    }
+
+    
   }
 
 
@@ -199,6 +234,10 @@ int main(int argc, char *argv[])
 
     double* ud = d4est_mesh_get_field_on_ghost(ged,0,NULL,d4est_ghost_data);
     double* up = &ged->test_data[0];
+
+
+    double* ud_face = d4est_mesh_get_field_on_ghost(ged,1,"u_face",d4est_ghost_data);
+    double* up_face = &ged->test_data_face[0];
     
     d4est_field_type_t type = d4est_ghost_data->transfer_types[0];
     int size = d4est_element_data_get_size_of_field(ged,type);
@@ -207,6 +246,13 @@ int main(int argc, char *argv[])
     if (!compare){
       DEBUG_PRINT_2ARR_DBL(ud, up, size);
     }
+
+    int compare1 = d4est_util_compare_vecs(ud_face, up_face, (D4EST_FACES), 1e-15);
+    if (!compare1){
+      DEBUG_PRINT_2ARR_DBL(ud_face, up_face, (D4EST_FACES));
+    }
+
+    
   }
 
   

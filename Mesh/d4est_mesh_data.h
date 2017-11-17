@@ -26,16 +26,14 @@ typedef struct {
 
 typedef struct {
   int mpi_rank; /**< mpirank or id of subdomain */
-
   d4est_dictionary_t fields; /**< dictionary for fields defined on local grid */
-  d4est_mesh_data_sizes_t field_sizes;
+  int field_sizes [D4EST_FIELD_TYPES];
  
 } d4est_mesh_data_t;
 
 /* This file was automatically generated.  Do not edit! */
 void d4est_mesh_data_destroy(d4est_mesh_data_t *s);
-d4est_mesh_data_t *d4est_mesh_data_init(int mpi_rank,d4est_mesh_data_sizes_t *loc_sizes);
-void d4est_mesh_data_update(d4est_mesh_data_t *s,d4est_mesh_data_sizes_t *loc_sizes);
+d4est_mesh_data_t *d4est_mesh_data_init(int mpi_rank,int *loc_sizes);
 void d4est_mesh_data_get_vector_field(d4est_mesh_data_t *s,const char *prefix,double *vfield[(D4EST_DIM)]);
 void d4est_mesh_data_delete_field(d4est_mesh_data_t *s,const char *name);
 int d4est_mesh_data_add_field(d4est_mesh_data_t *s,const char *name,d4est_field_type_t field_type);
