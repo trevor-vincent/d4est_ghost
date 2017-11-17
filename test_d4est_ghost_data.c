@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <d4est_base.h>
 #include <d4est_mesh.h>
+#include <d4est_util.h>
 #include <d4est_mesh_data.h>
 #include <d4est_ghost_data.h>
 #include <d4est_ghost.h>
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
                                                 &sizes);
 
 
-  d4est_ghost_t* d4est_ghost = d4est_ghost_init(p4est);
+
 
 
 
@@ -135,8 +136,7 @@ int main(int argc, char *argv[])
                      ed,
                      "u",
                      VOLUME_NODAL,
-                     dmd,
-                     NULL
+                     dmd
                     );
         for (int i = 0; i < elem_size; i++){
           ed->test_data[i] = i*ed->id + 1;
@@ -147,7 +147,9 @@ int main(int argc, char *argv[])
         }
         
       }
-    }  
+    }
+
+  d4est_ghost_t* d4est_ghost = d4est_ghost_init(p4est);
 
   const char* transfer_names [] = {"u", NULL};
   
@@ -159,18 +161,53 @@ int main(int argc, char *argv[])
                             dmd
                            );
 
-  double* u = d4est_mesh_data_get_field
-              (
-               dmd,
-               "u"
-              );  
+  /* double* u = d4est_mesh_data_get_field */
+  /*             ( */
+  /*              dmd, */
+  /*              "u" */
+  /*             );   */
 
-  for (int i = 0; i < dmd->field_sizes.local_nodes; i++){
-    printf(" u = %f on proc %d\n", u[i], p4est->mpirank); 
-  }
+  /* for (int i = 0; i < dmd->field_sizes.local_nodes; i++){ */
+  /*   printf(" u = %f on proc %d\n", u[i], p4est->mpirank);  */
+  /* } */
   
   /* d4est_mpi_gdb_stall(); */
   d4est_ghost_data_exchange(p4est, d4est_ghost, d4est_ghost_data, dmd);
+
+
+  for (int gid = 0; gid < d4est_ghost->ghost->ghosts.elem_count; gid++){
+    d4est_element_data_t* ged = &d4est_ghost->ghost_elements[gid];
+
+    double* ud = d4est_mesh_get_field_on_ghost(ged,0,NULL,d4est_ghost_data);
+    double* up = &ged->test_data[0];
+    
+    d4est_field_type_t type = d4est_ghost_data->transfer_types[0];
+    int size = d4est_element_data_get_size_of_field(ged,type);
+
+    int compare = d4est_util_compare_vecs(ud, up, size, 1e-15);
+    if (!compare){
+      DEBUG_PRINT_2ARR_DBL(ud, up, size);
+    }
+  }
+
+
+  d4est_ghost_data_exchange(p4est, d4est_ghost, d4est_ghost_data, dmd);
+
+
+  for (int gid = 0; gid < d4est_ghost->ghost->ghosts.elem_count; gid++){
+    d4est_element_data_t* ged = &d4est_ghost->ghost_elements[gid];
+
+    double* ud = d4est_mesh_get_field_on_ghost(ged,0,NULL,d4est_ghost_data);
+    double* up = &ged->test_data[0];
+    
+    d4est_field_type_t type = d4est_ghost_data->transfer_types[0];
+    int size = d4est_element_data_get_size_of_field(ged,type);
+
+    int compare = d4est_util_compare_vecs(ud, up, size, 1e-15);
+    if (!compare){
+      DEBUG_PRINT_2ARR_DBL(ud, up, size);
+    }
+  }
 
   
   d4est_ghost_data_destroy(d4est_ghost_data);

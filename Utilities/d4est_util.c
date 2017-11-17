@@ -1,4 +1,6 @@
 #include <d4est_util.h>
+#include <string.h>
+#include <math.h>
 
 double
 d4est_util_dbl_pow_int(double a, int b){
@@ -37,4 +39,23 @@ void
 d4est_util_copy_1st_to_2nd (double *v1, double *v2, int N)
 {
   memcpy (v2, v1, N * sizeof (double));
+}
+
+int
+d4est_util_compare_double(double a, double b, double eps){
+  if (fabs(a-b) < eps)
+    return 1;
+  return 0;
+}
+
+int
+d4est_util_compare_vecs(double* a, double*b, int N, double eps){
+  int i;
+  for (i = 0; i < N; i++) {
+    if(!d4est_util_compare_double(a[i],b[i],eps)){
+      /* printf("a[%d],b[%d],eps = %.25f,%.25f,%.25f\n", i,i, a[i], b[i], eps); */
+      return 0;
+    }
+  }
+  return 1;
 }

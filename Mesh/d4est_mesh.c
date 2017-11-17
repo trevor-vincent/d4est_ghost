@@ -46,16 +46,26 @@ double* d4est_mesh_get_field_on_element
  d4est_element_data_t* ed,
  const char* name,
  d4est_field_type_t type,
- d4est_mesh_data_t* lgd,
- d4est_ghost_data_t* dgd
+ d4est_mesh_data_t* lgd
 ){
 
-  if(ed->mpi_rank == lgd->mpi_rank){
-    D4EST_ASSERT(lgd != NULL);
-    double* field = d4est_mesh_data_get_field(lgd, name);
-    D4EST_ASSERT(field != NULL);
-    int stride = d4est_element_data_get_stride_for_field(ed, type);
-    return &field[stride];
-  }
-  else{}
+  D4EST_ASSERT(ed->mpi_rank == lgd->mpi_rank);
+  D4EST_ASSERT(lgd != NULL);
+  double* field = d4est_mesh_data_get_field(lgd, name);
+  D4EST_ASSERT(field != NULL);
+  int stride = d4est_element_data_get_stride_for_field(ed, type);
+  return &field[stride];
+}
+
+
+
+double* d4est_mesh_get_field_on_ghost
+(
+ d4est_element_data_t* ed,
+ int name_id,
+ const char* name,
+ d4est_ghost_data_t* dgd
+){
+  int stride = dgd->receive_strides[ed->id][name_id];
+  return &dgd->receive_data[stride];
 }

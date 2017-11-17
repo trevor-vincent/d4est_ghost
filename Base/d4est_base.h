@@ -42,6 +42,14 @@
     }                                           \
   } while(0)
 
+
+#define DEBUG_PRINT_2ARR_DBL(a, b, n) do {            \
+    printf("%s, %s = \n",#a, #b);               \
+    for (int i = 0; i < n; i++) {               \
+      printf("%.25f %.25f\n",a[i], b[i]);       \
+    }                                           \
+  } while(0)
+
 #define DEBUG_PRINT_ARR_DBL_SUM(a, n) do {      \
     double sum = 0.;                            \
     for (int i = 0; i < n; i++) {               \
